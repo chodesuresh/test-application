@@ -12,7 +12,7 @@ jobs:
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
-      AWS_REGION: ${{ secrets.EKS_REGION }}
+      AWS_REGION: us-west-2
 
     steps:
       - name: Checkout Code
@@ -23,14 +23,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.EKS_REGION }}
+          aws-region: us-west-2
 
       - name: Debug Environment Variables
         run: env | grep 'AWS\|ECR\|EKS'
 
       - name: Login to Amazon ECR
         run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
       - name: Build Docker image
         run: |
@@ -43,7 +43,7 @@ jobs:
 
       - name: Update Kubeconfig
         run: |
-          aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+          aws eks update-kubeconfig --region us-west-2 --name $EKS_CLUSTER_NAME
 
       - name: Deploy to EKS
         run: |
