@@ -1,21 +1,29 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      docker: 18
+      kubectl: 1.18
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 482315748676.dkr.ecr.us-west-2.amazonaws.com
+      - echo Setting up kubeconfig...
+      - aws eks update-kubeconfig --region us-west-2 --name my-eks-cluster
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t test-application .
       - docker tag test-application:latest 482315748676.dkr.ecr.us-west-2.amazonaws.com/test-application:latest
-  post_build:
-    commands:
-      - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push 482315748676.dkr.ecr.us-west-2.amazonaws.com/test-application:latest
+  post_build:
+    commands:
+      - echo Deploying to Kubernetes cluster...
+      - kubectl apply -f deployment.yaml
+      - kubectl apply -f service.yaml
 artifacts:
   files:
     - deployment.yaml
