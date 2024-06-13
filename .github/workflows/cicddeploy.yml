@@ -9,13 +9,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
-      AWS_REGION: us-west-2
-    permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -25,27 +18,24 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
-
-      - name: Debug Environment Variables
-        run: env | grep 'AWS\|ECR\|EKS'
+          aws-region: ${{ secrets.EKS_REGION }}
 
       - name: Login to Amazon ECR
         run: |
-          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $ECR_REGISTRY
+          aws ecr get-login-password --region ${{ secrets.EKS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
 
       - name: Build Docker image
         run: |
           docker build -t test-application .
-          docker tag test-application:latest $ECR_REGISTRY/test-application:latest
+          docker tag test-application:latest ${{ secrets.ECR_REGISTRY }}/test-application:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push $ECR_REGISTRY/test-application:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/test-application:latest
 
       - name: Update Kubeconfig
         run: |
-          aws eks update-kubeconfig --region us-west-2 --name $EKS_CLUSTER_NAME
+          aws eks update-kubeconfig --region ${{ secrets.EKS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
 
       - name: Deploy to EKS
         run: |
